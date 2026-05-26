@@ -127,6 +127,8 @@ var CAT_COLORS = {
   'Snooker':'#a3e635','Outros':'#6b7280'
 };
 
+var CAT_ORDER = ['Soccer', 'Games', 'Basketball', 'Baseball'];
+
 var DAYS = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
 var MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
 var weekOffset = 0;
@@ -224,7 +226,14 @@ function render() {
     if (c.toLowerCase().includes(q)) return true;
     return Object.keys(counts[c]||{}).some(function(l){ return l.toLowerCase().includes(q); });
   });
-  allCats.sort(function(a,b) {
+
+  // Orden fijo para las primeras 4, resto por cantidad
+  allCats.sort(function(a, b) {
+    var ia = CAT_ORDER.indexOf(a);
+    var ib = CAT_ORDER.indexOf(b);
+    if (ia !== -1 && ib !== -1) return ia - ib;
+    if (ia !== -1) return -1;
+    if (ib !== -1) return 1;
     return weekTotal(counts[b]||{},dates) - weekTotal(counts[a]||{},dates);
   });
 
@@ -316,8 +325,6 @@ function render() {
   });
 
   document.getElementById('calBody').innerHTML = bodyHtml;
-
-  // Re-attach click listener al tbody después de cada render
   document.getElementById('calBody').removeEventListener('click', handleRowClick);
   document.getElementById('calBody').addEventListener('click', handleRowClick);
 }
