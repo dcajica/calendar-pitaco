@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turnover por Deporte - Pitaco</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #0d0f18; color: #e8eaf0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+.app { padding: 28px 24px; max-width: 1300px; margin: 0 auto; }
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo h1 { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+.logo-sub { font-size: 12px; color: #4b5563; font-weight: 400; margin-left: 4px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block; animation: pulse 2s infinite; flex-shrink: 0; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.85)} }
+.week-nav { display: flex; align-items: center; gap: 10px; }
+.week-label { font-size: 13px; font-weight: 600; color: #e8eaf0; min-width: 200px; text-align: center; }
+.nav-btn { background: #1a1d2e; border: 1px solid #2a2d3a; color: #6b7280; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.nav-btn:hover { border-color: #4f46e5; color: #fff; background: #1e2040; }
+.nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.controls { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+.search-wrap { position: relative; flex: 1; min-width: 220px; max-width: 360px; }
+.search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #4b5563; width: 14px; height: 14px; }
+input[type=text] { width: 100%; padding: 8px 12px 8px 34px; background: #13151f; border: 1px solid #1e2130; border-radius: 8px; color: #e8eaf0; font-size: 12px; outline: none; font-family: inherit; transition: border-color 0.15s; }
+input[type=text]:focus { border-color: #4f46e5; }
+input[type=text]::placeholder { color: #374151; }
+.updated { font-size: 11px; color: #374151; margin-left: auto; }
+.table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #1a1d2e; }
+table { width: 100%; border-collapse: collapse; min-width: 800px; }
+thead tr { background: #13151f; }
+thead th { padding: 0; border-bottom: 1px solid #1a1d2e; text-align: center; white-space: nowrap; }
+thead th.col-sport { text-align: left; min-width: 200px; padding: 16px 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #374151; }
+thead th.col-lw { border-left: 1px solid #1a1d2e; min-width: 80px; padding: 16px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #374151; }
+.day-header { padding: 12px 16px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 90px; }
+.day-name { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #4b5563; }
+.day-date { font-size: 20px; font-weight: 700; color: #9ca3af; line-height: 1; }
+.day-month { font-size: 10px; font-weight: 500; color: #374151; text-transform: uppercase; }
+thead th.today-col .day-name { color: #818cf8; }
+thead th.today-col .day-date { color: #fff; }
+thead th.today-col .day-month { color: #6366f1; }
+thead th.today-col { background: #13152a; }
+thead th.past-col .day-date { color: #374151; }
+thead th.past-col .day-name { color: #2d3748; }
+thead th.past-col .day-month { color: #1f2937; }
+tr.sport-row { cursor: pointer; user-select: none; }
+tr.sport-row td { padding: 14px 20px; border-top: 1px solid #1a1d2e; background: #0d0f18; transition: background 0.12s; }
+tr.sport-row:hover td { background: #111320; }
+tr.sport-row td.today-col { background: #0d0f20; }
+tr.sport-row:hover td.today-col { background: #111328; }
+tr.sport-row td.col-lw { border-left: 1px solid #1a1d2e; }
+.sport-label { display: flex; align-items: center; gap: 10px; }
+.sport-bar { width: 3px; height: 20px; border-radius: 2px; flex-shrink: 0; }
+.sport-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.sport-count-badge { font-size: 10px; color: #374151; font-weight: 500; margin-left: 2px; }
+.cell-empty { color: #1e2130; font-size: 13px; }
+.day-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.val-brl { font-size: 14px; font-weight: 700; line-height: 1; }
+.val-pct { font-size: 10px; font-weight: 600; color: #4b5563; }
+.delta { font-size: 10px; font-weight: 700; }
+.delta.up { color: #22c55e; }
+.delta.down { color: #ef4444; }
+.lw-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.lw-pct { font-size: 12px; font-weight: 700; }
+.lw-pct.up { color: #22c55e; }
+.lw-pct.down { color: #ef4444; }
+.lw-pct.neutral { color: #374151; }
+.no-data { color: #374151; font-size: 13px; text-align: center; padding: 64px; }
+.note { font-size: 11px; color: #2d3748; text-align: center; padding: 12px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">
+      <span class="dot"></span>
+      <h1>Turnover por Deporte <span class="logo-sub">Pitaco</span></h1>
+    </div>
+    <div class="week-nav">
+      <button class="nav-btn" id="btnPrev" onclick="changeWeek(-1)">&#8249;</button>
+      <div class="week-label" id="weekLabel"></div>
+      <button class="nav-btn" id="btnNext" onclick="changeWeek(1)">&#8250;</button>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="search-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+      </svg>
+      <input type="text" id="searchInput" placeholder="Buscar categoria..." oninput="render()">
+    </div>
+    <div class="updated" id="updatedAt"></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead id="calHead"></thead>
+      <tbody id="calBody"></tbody>
+    </table>
+  </div>
+  <div class="note" id="weekNote"></div>
+</div>
+<script>
+var DATA = JSON.parse(decodeURIComponent(escape(atob('eyJ3ZWVrcyI6IHsiLTUiOiB7IlNvY2NlciI6IHsiMjAyNi0wNC0yMSI6IDEzOTcxNjc3LjE5LCAiMjAyNi0wNC0yMiI6IDIxNjA2NTMwLjIyLCAiMjAyNi0wNC0yMyI6IDEyMDI5Nzk2LjIsICIyMDI2LTA0LTI0IjogODYzMDYxNi4xMiwgIjIwMjYtMDQtMjUiOiAxODkxMzgwOC45NSwgIjIwMjYtMDQtMjYiOiAxODk2NTMxMS42NSwgIjIwMjYtMDQtMjciOiA3NzMwMDQzLjc2fSwgIkJhc2tldGJhbGwiOiB7IjIwMjYtMDQtMjEiOiA2OTEyMDkuOTQsICIyMDI2LTA0LTIyIjogMzg5MTgzLjg4LCAiMjAyNi0wNC0yMyI6IDY0MzUzNi42NSwgIjIwMjYtMDQtMjQiOiA3OTEyOTcuNCwgIjIwMjYtMDQtMjUiOiA0ODAyOTIuNzUsICIyMDI2LTA0LTI2IjogODg2NTE3Ljk5LCAiMjAyNi0wNC0yNyI6IDc3Nzg3MS4wN30sICJUZW5uaXMiOiB7IjIwMjYtMDQtMjEiOiAzMTEyMTMuODUsICIyMDI2LTA0LTIyIjogMjEyMTA3LjMxLCAiMjAyNi0wNC0yMyI6IDQwMjMwMS44NiwgIjIwMjYtMDQtMjQiOiA2NTI0ODguNjEsICIyMDI2LTA0LTI1IjogMTU4NTI5LjgxLCAiMjAyNi0wNC0yNiI6IDI3NjE5MS4zNSwgIjIwMjYtMDQtMjciOiA0MzMxMTMuNTd9LCAiR2FtZXMiOiB7IjIwMjYtMDQtMjEiOiAzMTA0NDcuMTk5OTk5OTk5OTUsICIyMDI2LTA0LTIyIjogMjk0MDA4Ljc2LCAiMjAyNi0wNC0yMyI6IDM1NzUxMS43MDk5OTk5OTk5NiwgIjIwMjYtMDQtMjQiOiA0MTk3NDEuODIsICIyMDI2LTA0LTI1IjogMjM0NTA1Ljk4LCAiMjAyNi0wNC0yNiI6IDIwNzY2Mi4zNzk5OTk5OTk5OCwgIjIwMjYtMDQtMjciOiAyODEwNjAuOTV9LCAiQmFzZWJhbGwiOiB7IjIwMjYtMDQtMjEiOiAyMDczOC45OCwgIjIwMjYtMDQtMjIiOiAxMjg1OC41LCAiMjAyNi0wNC0yMyI6IDI5NzUxLjc3LCAiMjAyNi0wNC0yNCI6IDE3NjE1LjIxLCAiMjAyNi0wNC0yNSI6IDg2NjYuMTQsICIyMDI2LTA0LTI2IjogMzgxNDQuNjcsICIyMDI2LTA0LTI3IjogMTE1NTIuNjh9LCAiVGFibGUgVGVubmlzIjogeyIyMDI2LTA0LTIxIjogMTg1MTAuNjksICIyMDI2LTA0LTIyIjogMTc4MjIuNDgsICIyMDI2LTA0LTIzIjogMTkyODYuNDEsICIyMDI2LTA0LTI0IjogMzAwMjguMjcsICIyMDI2LTA0LTI1IjogNzU0MC4xMywgIjIwMjYtMDQtMjYiOiAxODg4NC43OSwgIjIwMjYtMDQtMjciOiA1MTE0NC42fSwgIkljZSBIb2NrZXkiOiB7IjIwMjYtMDQtMjEiOiAxNTA2MS4xNiwgIjIwMjYtMDQtMjIiOiA2NDkxLjUzLCAiMjAyNi0wNC0yMyI6IDg4MjEuMjIsICIyMDI2LTA0LTI0IjogODI0NS43MiwgIjIwMjYtMDQtMjUiOiA0OTQ2LjE0LCAiMjAyNi0wNC0yNiI6IDY5MzYuNzYsICIyMDI2LTA0LTI3IjogNTY2MS43OH0sICJWb2xsZXliYWxsIjogeyIyMDI2LTA0LTIxIjogNzY5My44MiwgIjIwMjYtMDQtMjIiOiAxMjgzOC45MywgIjIwMjYtMDQtMjMiOiA4MTc4Ljc3LCAiMjAyNi0wNC0yNCI6IDE0Njc4Ljg1LCAiMjAyNi0wNC0yNSI6IDY4NTguMywgIjIwMjYtMDQtMjYiOiA0NzE5LjIsICIyMDI2LTA0LTI3IjogMTA0ODIuNzh9LCAiSGFuZGJhbGwiOiB7IjIwMjYtMDQtMjEiOiA0MTE5LjcsICIyMDI2LTA0LTIyIjogMzE4OS42MywgIjIwMjYtMDQtMjMiOiAxNzE2LjQ4LCAiMjAyNi0wNC0yNCI6IDIzMzAuODUsICIyMDI2LTA0LTI1IjogNDE1Ny4yLCAiMjAyNi0wNC0yNiI6IDQ1NzguNDYsICIyMDI2LTA0LTI3IjogMTU5NC40N30sICJGdXRzYWwiOiB7IjIwMjYtMDQtMjEiOiAyOTA5LjkyLCAiMjAyNi0wNC0yMiI6IDM1OTAuNTQsICIyMDI2LTA0LTIzIjogMTExNS45MywgIjIwMjYtMDQtMjQiOiA2NTQ1Ljc1LCAiMjAyNi0wNC0yNSI6IDcwMzAuNTEsICIyMDI2LTA0LTI2IjogNDkyMC4yMywgIjIwMjYtMDQtMjciOiAxMzg4Ljc0fSwgIkRhcnRzIjogeyIyMDI2LTA0LTIxIjogMjkxLjU2LCAiMjAyNi0wNC0yMiI6IDkzNS4xMywgIjIwMjYtMDQtMjMiOiA5ODguMzUsICIyMDI2LTA0LTI0IjogNDQzLjQ1LCAiMjAyNi0wNC0yNSI6IDE5NS4xNywgIjIwMjYtMDQtMjciOiAxMDYyLjN9LCAiQ3ljbGluZyI6IHsiMjAyNi0wNC0yMiI6IDcuMH0sICJCb3hpbmciOiB7IjIwMjYtMDQtMjMiOiA0OTcuODUsICIyMDI2LTA0LTI0IjogNTYuMSwgIjIwMjYtMDQtMjUiOiA1MzUuMDh9LCAiQW1lcmljYW4gRm9vdGJhbGwiOiB7IjIwMjYtMDQtMjQiOiA1Ny44MSwgIjIwMjYtMDQtMjUiOiA4NzcuNDgsICIyMDI2LTA0LTI2IjogOTU5Ljk3fSwgIk1NQSI6IHsiMjAyNi0wNC0yNSI6IDYxNjIyLjg2fX0sICItNCI6IHsiU29jY2VyIjogeyIyMDI2LTA0LTI4IjogMTUxNTc0NjcuMTIsICIyMDI2LTA0LTI5IjogMTYwMjgyODYuNDMsICIyMDI2LTA0LTMwIjogMTA5OTgzODMuMDcsICIyMDI2LTA1LTAxIjogNjM5MzE0Ny4zNSwgIjIwMjYtMDUtMDIiOiAyNDk3NzcyMi44OCwgIjIwMjYtMDUtMDMiOiAyMTczNTM0NS4xNywgIjIwMjYtMDUtMDQiOiAxMDA4MTg1NC4yMDAwMDAwMDF9LCAiQmFza2V0YmFsbCI6IHsiMjAyNi0wNC0yOCI6IDQ5NDI0OS41NiwgIjIwMjYtMDQtMjkiOiA1NTAzOTEuMiwgIjIwMjYtMDQtMzAiOiA2OTE5ODMuODksICIyMDI2LTA1LTAxIjogOTMwNjkwLjc0LCAiMjAyNi0wNS0wMiI6IDM3OTE5NC42NCwgIjIwMjYtMDUtMDMiOiA0NTExODQuMzEsICIyMDI2LTA1LTA0IjogNTQ0NTcxLjc5fSwgIlRlbm5pcyI6IHsiMjAyNi0wNC0yOCI6IDQ5MTc0Ny42LCAiMjAyNi0wNC0yOSI6IDM5NTYxMC4zOCwgIjIwMjYtMDQtMzAiOiAyNDk3NzguNDksICIyMDI2LTA1LTAxIjogNDcxMjM5LjMxLCAiMjAyNi0wNS0wMiI6IDIwNTYxNi4yMywgIjIwMjYtMDUtMDMiOiA4MjYxNC4xMiwgIjIwMjYtMDUtMDQiOiAyNTkxMDguMzN9LCAiR2FtZXMiOiB7IjIwMjYtMDQtMjgiOiAyNzkyNTIuNTc5OTk5OTk5OTYsICIyMDI2LTA0LTI5IjogMjg2MjA3LjU1OTk5OTk5OTk0LCAiMjAyNi0wNC0zMCI6IDQ2ODI5NS45Nzk5OTk5OTk5LCAiMjAyNi0wNS0wMSI6IDMzNzk4NS44NjAwMDAwMDAwNCwgIjIwMjYtMDUtMDIiOiAzMDg1NDAuMjgsICIyMDI2LTA1LTAzIjogMjk5MTUwLjE3LCAiMjAyNi0wNS0wNCI6IDMxMTg5Ni4yOH0sICJUYWJsZSBUZW5uaXMiOiB7IjIwMjYtMDQtMjgiOiAyMDQ4OS4zOCwgIjIwMjYtMDQtMjkiOiAyNzEwNi45LCAiMjAyNi0wNC0zMCI6IDI1NDIyLjcsICIyMDI2LTA1LTAxIjogMjg1NzUuODgsICIyMDI2LTA1LTAyIjogMjI0OTYuNzMsICIyMDI2LTA1LTAzIjogODcyOS45OCwgIjIwMjYtMDUtMDQiOiAzOTA0NS45M30sICJCYXNlYmFsbCI6IHsiMjAyNi0wNC0yOCI6IDE4MTIwLjQ2LCAiMjAyNi0wNC0yOSI6IDE2NzEyLjQsICIyMDI2LTA0LTMwIjogMjYxMjUuNTYsICIyMDI2LTA1LTAxIjogMjgxOTkuMzUsICIyMDI2LTA1LTAyIjogMTgwMDAuMywgIjIwMjYtMDUtMDMiOiAxNDk1MS43LCAiMjAyNi0wNS0wNCI6IDIzNzkzLjc1fSwgIkljZSBIb2NrZXkiOiB7IjIwMjYtMDQtMjgiOiA0ODQxLjA4LCAiMjAyNi0wNC0yOSI6IDUwMjQuMjIsICIyMDI2LTA0LTMwIjogMTEyNTEuNCwgIjIwMjYtMDUtMDEiOiAxOTQ2MC45NCwgIjIwMjYtMDUtMDIiOiA1NzcxLjgyLCAiMjAyNi0wNS0wMyI6IDg2MzMuMzgsICIyMDI2LTA1LTA0IjogMTkyMTEuMDF9LCAiVm9sbGV5YmFsbCI6IHsiMjAyNi0wNC0yOCI6IDM3NTguNDUsICIyMDI2LTA0LTI5IjogNTAxMi41OCwgIjIwMjYtMDQtMzAiOiA0NTYzLjM0LCAiMjAyNi0wNS0wMSI6IDEwODI1LjE1LCAiMjAyNi0wNS0wMiI6IDY3NDEuOTYsICIyMDI2LTA1LTAzIjogMjk1NjMuODMsICIyMDI2LTA1LTA0IjogNDg3My41NH0sICJGdXRzYWwiOiB7IjIwMjYtMDQtMjgiOiAzMTYzLjgyLCAiMjAyNi0wNC0yOSI6IDQzNzYuNDksICIyMDI2LTA0LTMwIjogMzA4Ny43NCwgIjIwMjYtMDUtMDEiOiA0NzE5LjU5LCAiMjAyNi0wNS0wMiI6IDM4MjIuMDYsICIyMDI2LTA1LTAzIjogMzI0Mi44MiwgIjIwMjYtMDUtMDQiOiAxNTQ3LjY0fSwgIkhhbmRiYWxsIjogeyIyMDI2LTA0LTI4IjogODkxLjgzLCAiMjAyNi0wNC0yOSI6IDUxMjkuMTMsICIyMDI2LTA0LTMwIjogMTc2Ny40MiwgIjIwMjYtMDUtMDEiOiA4NjAzLjc3LCAiMjAyNi0wNS0wMiI6IDU4MzkuMDIsICIyMDI2LTA1LTAzIjogMjUxMS4wMiwgIjIwMjYtMDUtMDQiOiAxOTY5LjA0fSwgIkRhcnRzIjogeyIyMDI2LTA0LTI4IjogMjEwLjc1LCAiMjAyNi0wNC0yOSI6IDEzNC44NSwgIjIwMjYtMDQtMzAiOiA4MzYzLjM1LCAiMjAyNi0wNS0wMSI6IDIzNy40NSwgIjIwMjYtMDUtMDIiOiAxNS4wLCAiMjAyNi0wNS0wNCI6IDEyODIuOTV9LCAiTU1BIjogeyIyMDI2LTA0LTI5IjogMjgwLjAsICIyMDI2LTA1LTAyIjogMTA5MDcyLjI4LCAiMjAyNi0wNS0wMyI6IDQ5Ny44NX0sICJCb3hpbmciOiB7IjIwMjYtMDQtMjkiOiAxNDQuMzIsICIyMDI2LTA1LTAxIjogMzMyLjQsICIyMDI2LTA1LTAyIjogMjE2NS40NSwgIjIwMjYtMDUtMDMiOiAxMDk2LjEyfSwgIkFtZXJpY2FuIEZvb3RiYWxsIjogeyIyMDI2LTA0LTMwIjogNzkuOTMsICIyMDI2LTA1LTAxIjogMzA5LjE1LCAiMjAyNi0wNS0wMiI6IDQ5LjAsICIyMDI2LTA1LTAzIjogMzU2LjF9LCAiQ3ljbGluZyI6IHsiMjAyNi0wNC0zMCI6IDEuNTEsICIyMDI2LTA1LTAyIjogMS4wLCAiMjAyNi0wNS0wMyI6IDEuMSwgIjIwMjYtMDUtMDQiOiAxLjF9LCAiU3VyZiI6IHsiMjAyNi0wNS0wMSI6IDI3MC4wLCAiMjAyNi0wNS0wMiI6IDE5MC4wfSwgIkZvcm11bGEgMSI6IHsiMjAyNi0wNS0wMSI6IDEwOS44NSwgIjIwMjYtMDUtMDIiOiA1NjYuNDcsICIyMDI2LTA1LTAzIjogMTIwNjUuODV9LCAiR29sZiI6IHsiMjAyNi0wNS0wMyI6IDIuMX19LCAiLTMiOiB7IlNvY2NlciI6IHsiMjAyNi0wNS0wNSI6IDE1MzQzNDY2LjE2LCAiMjAyNi0wNS0wNiI6IDE5NDg3NTI2LjA5LCAiMjAyNi0wNS0wNyI6IDE0NjI4NDUwLjY4LCAiMjAyNi0wNS0wOCI6IDc0MTk5MjQuOTQsICIyMDI2LTA1LTA5IjogMjM2NzYyMzAuNTUsICIyMDI2LTA1LTEwIjogMjg3NDQwNzYuNiwgIjIwMjYtMDUtMTEiOiA4Nzk4MjgyLjAzfSwgIkJhc2tldGJhbGwiOiB7IjIwMjYtMDUtMDUiOiAzODEzMjguMjQsICIyMDI2LTA1LTA2IjogMzc3NDUzLjA4LCAiMjAyNi0wNS0wNyI6IDUwMDQ2NS4zOSwgIjIwMjYtMDUtMDgiOiA4NDAzOTUuOTIsICIyMDI2LTA1LTA5IjogNTExNTU2Ljk2LCAiMjAyNi0wNS0xMCI6IDQ4NTMzNS42NCwgIjIwMjYtMDUtMTEiOiA1OTMwMDguMDh9LCAiR2FtZXMiOiB7IjIwMjYtMDUtMDUiOiA0NjAwNzAuNTIsICIyMDI2LTA1LTA2IjogMzczNzM5Ljc0OTk5OTk5OTk0LCAiMjAyNi0wNS0wNyI6IDQyNTE3My42NDAwMDAwMDAxLCAiMjAyNi0wNS0wOCI6IDQ1Njk5OC40MjAwMDAwMDAwNCwgIjIwMjYtMDUtMDkiOiAzNTc5ODMuMjksICIyMDI2LTA1LTEwIjogMzM1NTEyLjg0LCAiMjAyNi0wNS0xMSI6IDMyOTY3OS41M30sICJUZW5uaXMiOiB7IjIwMjYtMDUtMDUiOiAyNTIyNDUuMzYsICIyMDI2LTA1LTA2IjogMzkzMjY5LjMxLCAiMjAyNi0wNS0wNyI6IDM1NTM0Ny44MSwgIjIwMjYtMDUtMDgiOiA0ODg3MzMuMDMsICIyMDI2LTA1LTA5IjogMzIwNzA1Ljk3LCAiMjAyNi0wNS0xMCI6IDEzMzA1Mi4xNiwgIjIwMjYtMDUtMTEiOiAxOTYxODEuNH0sICJUYWJsZSBUZW5uaXMiOiB7IjIwMjYtMDUtMDUiOiAzNDYzOC4yMywgIjIwMjYtMDUtMDYiOiAyNDAyMC42LCAiMjAyNi0wNS0wNyI6IDQxNjEwLjY0LCAiMjAyNi0wNS0wOCI6IDM4MTY3LjMxLCAiMjAyNi0wNS0wOSI6IDMyOTU2LjUyLCAiMjAyNi0wNS0xMCI6IDE0NDg2LjU0LCAiMjAyNi0wNS0xMSI6IDY3MjYyLjg4fSwgIkJhc2ViYWxsIjogeyIyMDI2LTA1LTA1IjogMTQwODUuOTMsICIyMDI2LTA1LTA2IjogMTYxMTkuMzMsICIyMDI2LTA1LTA3IjogMTc1MDAuMzIsICIyMDI2LTA1LTA4IjogMjk0NzYuNzMsICIyMDI2LTA1LTA5IjogMTQ3ODQuMzksICIyMDI2LTA1LTEwIjogNzcyMi4wMywgIjIwMjYtMDUtMTEiOiA1NzUxLjQxfSwgIkljZSBIb2NrZXkiOiB7IjIwMjYtMDUtMDUiOiAxMjIzOC40NywgIjIwMjYtMDUtMDYiOiAzNzYyLjAyLCAiMjAyNi0wNS0wNyI6IDkxOTAuNTMsICIyMDI2LTA1LTA4IjogNjEwMi4zNSwgIjIwMjYtMDUtMDkiOiA2NTI4LjM3LCAiMjAyNi0wNS0xMCI6IDU0NjcuNjQsICIyMDI2LTA1LTExIjogMTgxMS45OH0sICJWb2xsZXliYWxsIjogeyIyMDI2LTA1LTA1IjogNTc1NC4yLCAiMjAyNi0wNS0wNiI6IDE4MDU2Ljk1LCAiMjAyNi0wNS0wNyI6IDQ3MjYuNTksICIyMDI2LTA1LTA4IjogNzA4MC41NywgIjIwMjYtMDUtMDkiOiAxODI1LjM4LCAiMjAyNi0wNS0xMCI6IDExNDc3LjY4LCAiMjAyNi0wNS0xMSI6IDIwNjUuNTV9LCAiRnV0c2FsIjogeyIyMDI2LTA1LTA1IjogMTk4OS4wLCAiMjAyNi0wNS0wNiI6IDExMTEuMzEsICIyMDI2LTA1LTA3IjogMTAxNS4zMiwgIjIwMjYtMDUtMDgiOiAxMTExNy4zNSwgIjIwMjYtMDUtMDkiOiA1OTM4LjA1LCAiMjAyNi0wNS0xMCI6IDkzMTkuNjUsICIyMDI2LTA1LTExIjogNjEzMi4yNn0sICJIYW5kYmFsbCI6IHsiMjAyNi0wNS0wNSI6IDE4MjAuNDIsICIyMDI2LTA1LTA2IjogMjYxMC4zMSwgIjIwMjYtMDUtMDciOiAzODMzLjg3LCAiMjAyNi0wNS0wOCI6IDQ0NTcuOCwgIjIwMjYtMDUtMDkiOiAzMjI0LjE4LCAiMjAyNi0wNS0xMCI6IDM2ODguNTIsICIyMDI2LTA1LTExIjogMTg0My43M30sICJEYXJ0cyI6IHsiMjAyNi0wNS0wNSI6IDgzMi42NywgIjIwMjYtMDUtMDYiOiA0Ny40MywgIjIwMjYtMDUtMDciOiAzODUuMDgsICIyMDI2LTA1LTA4IjogMjc2My4xMiwgIjIwMjYtMDUtMDkiOiA5My41LCAiMjAyNi0wNS0xMCI6IDIxOS40LCAiMjAyNi0wNS0xMSI6IDQzLjE1fSwgIkJveGluZyI6IHsiMjAyNi0wNS0wNiI6IDQ2Ny4yMiwgIjIwMjYtMDUtMDkiOiA0MzAuNzcsICIyMDI2LTA1LTEwIjogMjk2LjAxfSwgIkN5Y2xpbmciOiB7IjIwMjYtMDUtMDYiOiAwLjUsICIyMDI2LTA1LTA4IjogNjIuNX0sICJHb2xmIjogeyIyMDI2LTA1LTA3IjogMS41LCAiMjAyNi0wNS0wOCI6IDguNSwgIjIwMjYtMDUtMDkiOiAxLjAsICIyMDI2LTA1LTEwIjogMjQuNX0sICJBbWVyaWNhbiBGb290YmFsbCI6IHsiMjAyNi0wNS0wOCI6IDc5MC42MywgIjIwMjYtMDUtMDkiOiAyMDMuNTEsICIyMDI2LTA1LTEwIjogMjk3LjMxfSwgIk1NQSI6IHsiMjAyNi0wNS0wOSI6IDEwNzgwMy4wNCwgIjIwMjYtMDUtMTAiOiAxMDk1NTUuNDl9fSwgIi0yIjogeyJTb2NjZXIiOiB7IjIwMjYtMDUtMTIiOiAxMzM2Njg3NS42MSwgIjIwMjYtMDUtMTMiOiAyMDQ5ODQwNS4wOCwgIjIwMjYtMDUtMTQiOiAxNzEzMTQzMy42NSwgIjIwMjYtMDUtMTUiOiA2OTc1MDMzLjk2LCAiMjAyNi0wNS0xNiI6IDIwNzc0OTM5LjU5LCAiMjAyNi0wNS0xNyI6IDI3MjYzMTQ5LjE2LCAiMjAyNi0wNS0xOCI6IDY5MDU3MTcuNTd9LCAiVGVubmlzIjogeyIyMDI2LTA1LTEyIjogNDA2OTI2LjAxLCAiMjAyNi0wNS0xMyI6IDIyNjI0OS4yMiwgIjIwMjYtMDUtMTQiOiAxODkyMzcuMjYsICIyMDI2LTA1LTE1IjogMTgzMzUwLjUsICIyMDI2LTA1LTE2IjogMTExMzUyLjI4LCAiMjAyNi0wNS0xNyI6IDEwNDM0Mi44LCAiMjAyNi0wNS0xOCI6IDIxNTU2NC44NX0sICJCYXNrZXRiYWxsIjogeyIyMDI2LTA1LTEyIjogMzcwMjQxLjgzLCAiMjAyNi0wNS0xMyI6IDMwNDkyMy40OSwgIjIwMjYtMDUtMTQiOiAxNDQwMzguMTgsICIyMDI2LTA1LTE1IjogNjIxMjUyLjI4LCAiMjAyNi0wNS0xNiI6IDExNjA4Ny40MiwgIjIwMjYtMDUtMTciOiA0MDAxODcuNTcsICIyMDI2LTA1LTE4IjogNTM0OTcyLjd9LCAiR2FtZXMiOiB7IjIwMjYtMDUtMTIiOiA0NDA0ODYuNTU5OTk5OTk5OTQsICIyMDI2LTA1LTEzIjogMzg1NjQ4LjkxMDAwMDAwMDEsICIyMDI2LTA1LTE0IjogNDkzNDA0Ljg3LCAiMjAyNi0wNS0xNSI6IDYwOTk3My4yMzAwMDAwMDAxLCAiMjAyNi0wNS0xNiI6IDQ5MDQ2Ni4xMDAwMDAwMDAwMywgIjIwMjYtMDUtMTciOiAzNTEwMzkuMzk5OTk5OTk5OTcsICIyMDI2LTA1LTE4IjogMzkyOTY4LjM0fSwgIlRhYmxlIFRlbm5pcyI6IHsiMjAyNi0wNS0xMiI6IDQ1MDIwLjQ4LCAiMjAyNi0wNS0xMyI6IDI1NTU1LjM1LCAiMjAyNi0wNS0xNCI6IDUyMDkxLjgyLCAiMjAyNi0wNS0xNSI6IDQ4ODc1LjgsICIyMDI2LTA1LTE2IjogMzE2NjIuMDQsICIyMDI2LTA1LTE3IjogMzExNjEuMzQsICIyMDI2LTA1LTE4IjogNTk0MjQuNzJ9LCAiQmFzZWJhbGwiOiB7IjIwMjYtMDUtMTIiOiAxMzM3MC40NCwgIjIwMjYtMDUtMTMiOiAxMDk4MC41OSwgIjIwMjYtMDUtMTQiOiAyNDk0OC4zMSwgIjIwMjYtMDUtMTUiOiAxNzE2MS4yMSwgIjIwMjYtMDUtMTYiOiA1MzI5NS42MiwgIjIwMjYtMDUtMTciOiAxNjQ1Ny41MiwgIjIwMjYtMDUtMTgiOiA0OTc0MS4zNn0sICJWb2xsZXliYWxsIjogeyIyMDI2LTA1LTEyIjogMzA0Ny44LCAiMjAyNi0wNS0xMyI6IDcwODQuOTEsICIyMDI2LTA1LTE0IjogMjYyOC41MywgIjIwMjYtMDUtMTUiOiA3NjUxLjI2LCAiMjAyNi0wNS0xNiI6IDExODQ3LjI1LCAiMjAyNi0wNS0xNyI6IDg3NTguMTcsICIyMDI2LTA1LTE4IjogMzI4MC43NH0sICJJY2UgSG9ja2V5IjogeyIyMDI2LTA1LTEyIjogMjY1MS45MSwgIjIwMjYtMDUtMTMiOiAzMDc5LjA1LCAiMjAyNi0wNS0xNCI6IDE3MDg5LjE5LCAiMjAyNi0wNS0xNSI6IDQxMjcuNDQsICIyMDI2LTA1LTE2IjogMTUwNzYuNjgsICIyMDI2LTA1LTE3IjogMzE2Ni40LCAiMjAyNi0wNS0xOCI6IDg4ODEuODl9LCAiRnV0c2FsIjogeyIyMDI2LTA1LTEyIjogMjI4Ni4zNSwgIjIwMjYtMDUtMTMiOiAxODU3LjcsICIyMDI2LTA1LTE0IjogNjUwMS40NywgIjIwMjYtMDUtMTUiOiA3NzQ2LjAsICIyMDI2LTA1LTE2IjogOTE3Mi45MiwgIjIwMjYtMDUtMTciOiA0MjEyLjc2LCAiMjAyNi0wNS0xOCI6IDI0MDcuOTN9LCAiSGFuZGJhbGwiOiB7IjIwMjYtMDUtMTIiOiAxMDQwLjE2LCAiMjAyNi0wNS0xMyI6IDY5MzguNTEsICIyMDI2LTA1LTE0IjogNTc1Mi4xNCwgIjIwMjYtMDUtMTUiOiAyMjUxLjY4LCAiMjAyNi0wNS0xNiI6IDMyNDcuMjYsICIyMDI2LTA1LTE3IjogNjQyMS45MiwgIjIwMjYtMDUtMTgiOiAyODYyLjQ3fSwgIkRhcnRzIjogeyIyMDI2LTA1LTEyIjogMjgxLjY1LCAiMjAyNi0wNS0xMyI6IDM4MC41NiwgIjIwMjYtMDUtMTQiOiAzMzAuNTksICIyMDI2LTA1LTE1IjogMzEyLjAzLCAiMjAyNi0wNS0xNiI6IDE2LjAsICIyMDI2LTA1LTE4IjogMzM4My43M30sICJDeWNsaW5nIjogeyIyMDI2LTA1LTEyIjogMC41LCAiMjAyNi0wNS0xMyI6IDExLjAsICIyMDI2LTA1LTE0IjogMTcuOCwgIjIwMjYtMDUtMTUiOiAxOS4wLCAiMjAyNi0wNS0xNiI6IDEwLjAsICIyMDI2LTA1LTE3IjogMC41fSwgIkdvbGYiOiB7IjIwMjYtMDUtMTQiOiAxOC4wLCAiMjAyNi0wNS0xNyI6IDI1MjkuNX0sICJNTUEiOiB7IjIwMjYtMDUtMTUiOiAxODQuMjMsICIyMDI2LTA1LTE2IjogMTk3ODk5LjgzfSwgIkJveGluZyI6IHsiMjAyNi0wNS0xNSI6IDE2OC44MiwgIjIwMjYtMDUtMTYiOiA1NzguNDV9LCAiQW1lcmljYW4gRm9vdGJhbGwiOiB7IjIwMjYtMDUtMTUiOiAxMTcuNDMsICIyMDI2LTA1LTE2IjogMzIyLjgyLCAiMjAyNi0wNS0xNyI6IDEwMS40OH19LCAiLTEiOiB7IlNvY2NlciI6IHsiMjAyNi0wNS0xOSI6IDE0MTgzMDE1LjA3LCAiMjAyNi0wNS0yMCI6IDE4OTE4MjYwLjY0LCAiMjAyNi0wNS0yMSI6IDExNDQ4MDkyLjksICIyMDI2LTA1LTIyIjogNTQyNTQ5MC42MiwgIjIwMjYtMDUtMjMiOiAxOTE0ODQ0My4wNCwgIjIwMjYtMDUtMjQiOiAyMDc0Njc5Mi4yMiwgIjIwMjYtMDUtMjUiOiA1OTIxMzA2LjQ1fSwgIkJhc2tldGJhbGwiOiB7IjIwMjYtMDUtMTkiOiAzMTA4NTYuMDIsICIyMDI2LTA1LTIwIjogMzIyNzI3LjE1LCAiMjAyNi0wNS0yMSI6IDM0MjQ3NS44NywgIjIwMjYtMDUtMjIiOiA0MzQwNzIuNDgsICIyMDI2LTA1LTIzIjogMzUzNDEyLjA3LCAiMjAyNi0wNS0yNCI6IDQ1NDk4OS42NywgIjIwMjYtMDUtMjUiOiAzOTY3NDYuNzR9LCAiVGVubmlzIjogeyIyMDI2LTA1LTE5IjogMjY1NzU2LjM4LCAiMjAyNi0wNS0yMCI6IDI2NDY0NC4wMSwgIjIwMjYtMDUtMjEiOiAxOTkxMzYuNTksICIyMDI2LTA1LTIyIjogMjMwOTMwLjU5LCAiMjAyNi0wNS0yMyI6IDc3OTU0LjY0LCAiMjAyNi0wNS0yNCI6IDU0MTE5My4yOSwgIjIwMjYtMDUtMjUiOiA2MDYzOTkuNzF9LCAiR2FtZXMiOiB7IjIwMjYtMDUtMTkiOiAzNTcwOTEuMTgsICIyMDI2LTA1LTIwIjogNDAxMzc4LjE4LCAiMjAyNi0wNS0yMSI6IDUyMzY2MS41NDAwMDAwMDAwNCwgIjIwMjYtMDUtMjIiOiAzNDg1NzUuNTg5OTk5OTk5OTcsICIyMDI2LTA1LTIzIjogMzQ2MjYyLjE2LCAiMjAyNi0wNS0yNCI6IDQwMjY4Ny4wMDk5OTk5OTk5NSwgIjIwMjYtMDUtMjUiOiAzNzE3NzMuMTMwMDAwMDAwMDZ9LCAiQmFzZWJhbGwiOiB7IjIwMjYtMDUtMTkiOiA1OTcwNS40MywgIjIwMjYtMDUtMjAiOiAyNjQzMC4wNCwgIjIwMjYtMDUtMjEiOiAyNjc4NS44NiwgIjIwMjYtMDUtMjIiOiAyNjQwNC4xMywgIjIwMjYtMDUtMjMiOiAxMDY0NS4wLCAiMjAyNi0wNS0yNCI6IDEzNzA4LjQ4LCAiMjAyNi0wNS0yNSI6IDI3MjQxLjA3fSwgIlRhYmxlIFRlbm5pcyI6IHsiMjAyNi0wNS0xOSI6IDQ5MjM5Ljk1LCAiMjAyNi0wNS0yMCI6IDQwNDg5LjE3LCAiMjAyNi0wNS0yMSI6IDM2MDEyLjgzLCAiMjAyNi0wNS0yMiI6IDcxMzQ2LjA0LCAiMjAyNi0wNS0yMyI6IDE5Njk2LjA1LCAiMjAyNi0wNS0yNCI6IDIwNTUzLjM2LCAiMjAyNi0wNS0yNSI6IDQ2NTE0LjI5fSwgIlZvbGxleWJhbGwiOiB7IjIwMjYtMDUtMTkiOiAxNDcwNy43OCwgIjIwMjYtMDUtMjAiOiAyMjcwMy41OSwgIjIwMjYtMDUtMjEiOiAyMTAxLjUyLCAiMjAyNi0wNS0yMiI6IDUyODEuNjQsICIyMDI2LTA1LTIzIjogNDQ1Ni44LCAiMjAyNi0wNS0yNCI6IDQ1NTMuOTIsICIyMDI2LTA1LTI1IjogNDA0LjU3fSwgIkZ1dHNhbCI6IHsiMjAyNi0wNS0xOSI6IDQ2NzYuNzEsICIyMDI2LTA1LTIwIjogNTIxNS40MSwgIjIwMjYtMDUtMjEiOiA0NDc1Ljc3LCAiMjAyNi0wNS0yMiI6IDM0NTguNTIsICIyMDI2LTA1LTIzIjogNjMxMS41LCAiMjAyNi0wNS0yNCI6IDgyMTQuOCwgIjIwMjYtMDUtMjUiOiAyMTczOS4zMn0sICJIYW5kYmFsbCI6IHsiMjAyNi0wNS0xOSI6IDQyMTQuOTUsICIyMDI2LTA1LTIwIjogMzI2Ni4zMiwgIjIwMjYtMDUtMjEiOiA5Mjc4LjA5LCAiMjAyNi0wNS0yMiI6IDU3NTAuOTUsICIyMDI2LTA1LTIzIjogMTU4NzkuNjcsICIyMDI2LTA1LTI0IjogNzE3MS43MywgIjIwMjYtMDUtMjUiOiA4ODIuOTF9LCAiSWNlIEhvY2tleSI6IHsiMjAyNi0wNS0xOSI6IDI3OTkuNTgsICIyMDI2LTA1LTIwIjogNTcyMi4xNSwgIjIwMjYtMDUtMjEiOiA4Mjk1LjgsICIyMDI2LTA1LTIyIjogODY2NC4zNCwgIjIwMjYtMDUtMjMiOiA2MTYwLjg3LCAiMjAyNi0wNS0yNCI6IDg2MzQuOTgsICIyMDI2LTA1LTI1IjogNzUwMi4wNH0sICJEYXJ0cyI6IHsiMjAyNi0wNS0xOSI6IDk3Ni4xNSwgIjIwMjYtMDUtMjAiOiA1Ny4wMywgIjIwMjYtMDUtMjEiOiA3OTQ0Ljc1LCAiMjAyNi0wNS0yMiI6IDQ5MTUuNDIsICIyMDI2LTA1LTIzIjogMzY5NC4yNSwgIjIwMjYtMDUtMjQiOiAyOTUuMSwgIjIwMjYtMDUtMjUiOiAyMTcuNTh9LCAiQ3ljbGluZyI6IHsiMjAyNi0wNS0xOSI6IDEwMi41MSwgIjIwMjYtMDUtMjEiOiA4LjAsICIyMDI2LTA1LTIyIjogNzcuOTMsICIyMDI2LTA1LTI0IjogMy4wfSwgIkdvbGYiOiB7IjIwMjYtMDUtMjEiOiA5LjAsICIyMDI2LTA1LTI0IjogMjUzMS4wfSwgIlN1cmYiOiB7IjIwMjYtMDUtMjIiOiAyNTUzNi41NiwgIjIwMjYtMDUtMjMiOiA0NTEzLjIsICIyMDI2LTA1LTI0IjogMTI3OC45fSwgIkJveGluZyI6IHsiMjAyNi0wNS0yMiI6IDcwMS44OSwgIjIwMjYtMDUtMjMiOiAxNzI4LjAxfSwgIkFtZXJpY2FuIEZvb3RiYWxsIjogeyIyMDI2LTA1LTIyIjogNTc5LjQyLCAiMjAyNi0wNS0yMyI6IDE0Ni44MSwgIjIwMjYtMDUtMjQiOiA4MDAuMX0sICJGb3JtdWxhIDEiOiB7IjIwMjYtMDUtMjIiOiAxOC4wLCAiMjAyNi0wNS0yMyI6IDEyMS4xMSwgIjIwMjYtMDUtMjQiOiAzODU1LjI3fSwgIk1NQSI6IHsiMjAyNi0wNS0yMyI6IDExMTEuNzJ9fSwgIjAiOiB7IlNvY2NlciI6IHsiMjAyNi0wNS0yNiI6IDc5MTc0MjQuMjR9LCAiVGVubmlzIjogeyIyMDI2LTA1LTI2IjogNjEwMDk3LjMyfSwgIkdhbWVzIjogeyIyMDI2LTA1LTI2IjogMzEyNjUxLjkzMDAwMDAwMDA1fSwgIkJhc2tldGJhbGwiOiB7IjIwMjYtMDUtMjYiOiAxODc0NzQuNDN9LCAiVGFibGUgVGVubmlzIjogeyIyMDI2LTA1LTI2IjogMjE5OTYuNjJ9LCAiRnV0c2FsIjogeyIyMDI2LTA1LTI2IjogMTg2ODQuNDV9LCAiQmFzZWJhbGwiOiB7IjIwMjYtMDUtMjYiOiA3MzY5LjkxfSwgIkljZSBIb2NrZXkiOiB7IjIwMjYtMDUtMjYiOiAzNjA1LjIzfSwgIkhhbmRiYWxsIjogeyIyMDI2LTA1LTI2IjogMTk5OC4yN30sICJWb2xsZXliYWxsIjogeyIyMDI2LTA1LTI2IjogNjAyLjcyfSwgIkRhcnRzIjogeyIyMDI2LTA1LTI2IjogOTcuODR9LCAiQ3ljbGluZyI6IHsiMjAyNi0wNS0yNiI6IDIwLjB9fX0sICJjdXJyZW50X3R1ZSI6ICIyMDI2LTA1LTI2In0='))));
+
+var MIN_OFFSET = -5;
+var MAX_OFFSET = 0;
+
+var CAT_COLORS = {
+  'Games':'#4f46e5','Soccer':'#16a34a','Basketball':'#d97706',
+  'Tennis':'#0891b2','Table Tennis':'#0e7490','Volleyball':'#db2777',
+  'Handball':'#8b5cf6','American Football':'#92400e','Baseball':'#b45309',
+  'Boxing':'#dc2626','MMA':'#991b1b','Ice Hockey':'#0284c7',
+  'Futsal':'#06b6d4','Formula 1':'#e11d48','Golf':'#65a30d',
+  'Darts':'#ec4899','Cycling':'#f59e0b','Badminton':'#10b981',
+  'Squash':'#14b8a6','Rugby':'#7c3aed','Cricket':'#84cc16',
+  'Surf':'#0ea5e9','Speedway':'#f97316','Lacrosse':'#a855f7',
+  'Hurling':'#22c55e','Water Polo':'#38bdf8','Racing':'#fb923c',
+  'Snooker':'#a3e635','Outros':'#6b7280'
+};
+
+var CAT_ORDER = ['Soccer', 'Games', 'Basketball', 'Baseball'];
+var DAYS = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+var MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+var weekOffset = 0;
+
+function catColor(c) { return CAT_COLORS[c] || '#6b7280'; }
+function addDays(d, n) { var r = new Date(d.getTime()); r.setDate(r.getDate()+n); return r; }
+function dateKey(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function isToday(d) { var n=new Date(); return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate(); }
+function isPast(d) { var n=new Date(); n.setHours(0,0,0,0); return d<n; }
+function fmtBRL(v) {
+  if (v >= 1000000) return 'R$' + (v/1000000).toFixed(1) + 'M';
+  if (v >= 1000) return 'R$' + (v/1000).toFixed(1) + 'K';
+  return 'R$' + v.toFixed(0);
+}
+
+function getWeekDates(offset) {
+  var baseTue = new Date(DATA.current_tue+'T00:00:00');
+  var tue = addDays(baseTue, offset*7);
+  var dates = [];
+  for (var i=0;i<7;i++) dates.push(addDays(tue,i));
+  return dates;
+}
+function getCounts(offset) { return DATA.weeks[String(offset)] || {}; }
+function getPrevCounts(offset) { return DATA.weeks[String(offset-1)] || {}; }
+
+function weekTotal(catData, dates) {
+  var t=0;
+  dates.forEach(function(d) { t+=(catData[dateKey(d)]||0); });
+  return t;
+}
+function dayTotal(counts, date) {
+  var dk = dateKey(date);
+  var t=0;
+  Object.keys(counts).forEach(function(c) { t+=(counts[c][dk]||0); });
+  return t;
+}
+function renderLWCell(curr, prev) {
+  if (!prev && !curr) return '<td class="col-lw" style="text-align:center"><span class="cell-empty">-</span></td>';
+  var html = '<td class="col-lw" style="text-align:center"><div class="lw-wrap">';
+  if (prev > 0) {
+    var pct = Math.round(((curr-prev)/prev)*100);
+    var cls = pct>0?'up':pct<0?'down':'neutral';
+    var arrow = pct>0?'&#8593;':pct<0?'&#8595;':'';
+    html += '<span class="lw-pct '+cls+'">'+(pct!==0?arrow:'')+Math.abs(pct)+'%</span>';
+  } else {
+    html += '<span class="lw-pct neutral">-</span>';
+  }
+  html += '</div></td>';
+  return html;
+}
+function renderDelta(curr, prev) {
+  if (!prev || prev===0) return '';
+  var pct = Math.round(((curr-prev)/prev)*100);
+  if (pct>0) return '<div class="delta up">&#8593;'+pct+'%</div>';
+  if (pct<0) return '<div class="delta down">&#8595;'+Math.abs(pct)+'%</div>';
+  return '';
+}
+
+function changeWeek(dir) {
+  var next = weekOffset + dir;
+  if (next < MIN_OFFSET || next > MAX_OFFSET) return;
+  weekOffset = next;
+  render();
+}
+
+function render() {
+  var dates = getWeekDates(weekOffset);
+  var counts = getCounts(weekOffset);
+  var prevCounts = getPrevCounts(weekOffset);
+  var q = document.getElementById('searchInput').value.toLowerCase();
+
+  document.getElementById('btnPrev').disabled = weekOffset <= MIN_OFFSET;
+  document.getElementById('btnNext').disabled = weekOffset >= MAX_OFFSET;
+
+  var d0=dates[0]; var d6=dates[6];
+  document.getElementById('weekLabel').textContent =
+    DAYS[d0.getDay()]+' '+d0.getDate()+' '+MONTHS[d0.getMonth()]+
+    ' — '+DAYS[d6.getDay()]+' '+d6.getDate()+' '+MONTHS[d6.getMonth()];
+  var now=new Date();
+  document.getElementById('updatedAt').textContent='Actualizado '+
+    String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+
+  // Pre-calcular totales diarios para el %
+  var dailyTotals = {};
+  dates.forEach(function(d) { dailyTotals[dateKey(d)] = dayTotal(counts, d); });
+
+  var allCats = Object.keys(counts).filter(function(c) {
+    if (!q) return true;
+    return c.toLowerCase().includes(q);
+  });
+
+  allCats.sort(function(a, b) {
+    var ia = CAT_ORDER.indexOf(a);
+    var ib = CAT_ORDER.indexOf(b);
+    if (ia !== -1 && ib !== -1) return ia - ib;
+    if (ia !== -1) return -1;
+    if (ib !== -1) return 1;
+    var ta = dates.reduce(function(acc,d){ return acc+(counts[a][dateKey(d)]||0); }, 0);
+    var tb = dates.reduce(function(acc,d){ return acc+(counts[b][dateKey(d)]||0); }, 0);
+    return tb - ta;
+  });
+
+  // THEAD
+  var headHtml = '<tr><th class="col-sport">Categoria</th>';
+  dates.forEach(function(d) {
+    var cls = isToday(d)?'today-col':isPast(d)?'past-col':'';
+    headHtml += '<th class="'+cls+'"><div class="day-header">'+
+      '<span class="day-name">'+DAYS[d.getDay()]+'</span>'+
+      '<span class="day-date">'+d.getDate()+'</span>'+
+      '<span class="day-month">'+MONTHS[d.getMonth()]+'</span>'+
+      '</div></th>';
+  });
+  headHtml += '<th class="col-lw">vs LW</th></tr>';
+
+  // TOTAL ROW en thead
+  headHtml += '<tr style="background:#0d0f18;border-bottom:1px solid #1a1d2e;">';
+  headHtml += '<td style="padding:8px 20px;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.08em;">Total día</td>';
+  dates.forEach(function(d) {
+    var dk = dateKey(d);
+    var total = dailyTotals[dk] || 0;
+    var cls = isToday(d)?'today-col':'';
+    headHtml += '<td class="'+cls+'" style="text-align:center;padding:8px 0;">'+
+      '<span style="font-size:12px;font-weight:700;color:#6b7280;">'+fmtBRL(total)+'</span></td>';
+  });
+  // vs LW para total
+  var weekTotalCurr = dates.reduce(function(acc,d){ return acc+(dailyTotals[dateKey(d)]||0); }, 0);
+  var weekTotalPrev = dates.reduce(function(acc,d){
+    var prevDk = dateKey(addDays(d,-7));
+    return acc + Object.keys(prevCounts).reduce(function(a,c){ return a+(prevCounts[c][prevDk]||0); }, 0);
+  }, 0);
+  headHtml += renderLWCell(weekTotalCurr, weekTotalPrev);
+  headHtml += '</tr>';
+
+  document.getElementById('calHead').innerHTML = headHtml;
+
+  if (!allCats.length) {
+    document.getElementById('calBody').innerHTML = '<tr><td colspan="9" class="no-data">Sin datos</td></tr>';
+    return;
+  }
+
+  var bodyHtml = '';
+  allCats.forEach(function(cat) {
+    var catData = counts[cat] || {};
+    var prevCatData = prevCounts[cat] || {};
+    var color = catColor(cat);
+    var safeAttr = cat.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+
+    var wTotal = dates.reduce(function(acc,d){ return acc+(catData[dateKey(d)]||0); }, 0);
+    var prevWTotal = dates.reduce(function(acc,d){ return acc+(prevCatData[dateKey(addDays(d,-7))]||0); }, 0);
+
+    bodyHtml += '<tr class="sport-row"><td>';
+    bodyHtml += '<div class="sport-label">'+
+      '<span class="sport-bar" style="background:'+color+'"></span>'+
+      '<span class="sport-name" style="color:'+color+'">'+cat+'</span>'+
+      '<span class="sport-count-badge">('+fmtBRL(wTotal)+')</span>'+
+      '</div></td>';
+
+    dates.forEach(function(d) {
+      var dk = dateKey(d);
+      var val = catData[dk] || 0;
+      var dayTot = dailyTotals[dk] || 0;
+      var pct = dayTot > 0 ? (val/dayTot*100).toFixed(1) : 0;
+      var prevDk = dateKey(addDays(d,-7));
+      var prevVal = prevCatData[prevDk] || 0;
+      var cls = isToday(d)?'today-col':'';
+
+      if (val > 0) {
+        bodyHtml += '<td class="'+cls+'" style="text-align:center">'+
+          '<div class="day-cell">'+
+          '<span class="val-brl" style="color:'+color+'">'+fmtBRL(val)+'</span>'+
+          '<span class="val-pct">'+pct+'%</span>'+
+          renderDelta(val, prevVal)+
+          '</div></td>';
+      } else {
+        bodyHtml += '<td class="'+cls+'" style="text-align:center"><span class="cell-empty">—</span></td>';
+      }
+    });
+    bodyHtml += renderLWCell(wTotal, prevWTotal);
+    bodyHtml += '</tr>';
+  });
+
+  document.getElementById('calBody').innerHTML = bodyHtml;
+}
+
+render();
+</script>
+</body>
+</html>
